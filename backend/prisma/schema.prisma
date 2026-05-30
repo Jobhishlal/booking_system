@@ -1,0 +1,93 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Teacher {
+  id        String     @id @default(uuid())
+  name      String
+  email     String     @unique
+  timezone  String     // e.g. "Asia/Kolkata", "America/New_York"
+  offerings Offering[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@map("teachers")
+}
+
+model Parent {
+  id        String    @id @default(uuid())
+  name      String
+  email     String    @unique
+  timezone  String    
+  bookings  Booking[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("parents")
+}
+
+model Course {
+  id          String     @id @default(uuid())
+  title       String
+  description String?
+  offerings   Offering[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@map("courses")
+}
+
+model Offering {
+  id        String    @id @default(uuid())
+  courseId  String
+  course    Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  teacherId String
+  teacher   Teacher   @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  title     String    // e.g. "Summer Term", "Class A"
+  price     Decimal   @db.Decimal(10, 2)
+  status    String    @default("AVAILABLE") // AVAILABLE, CANCELLED
+  sessions  Session[]
+  bookings  Booking[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([courseId])
+  @@index([teacherId])
+  @@map("offerings")
+}
+
+model Session {
+  id         String   @id @default(uuid())
+  offeringId String
+  offering   Offering @relation(fields: [offeringId], references: [id], onDelete: Cascade)
+  startTime  DateTime // Stored in UTC in Database
+  endTime    DateTime // Stored in UTC in Database
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([offeringId])
+  @@index([startTime, endTime])
+  @@map("sessions")
+}
+
+model Booking {
+  id          String   @id @default(uuid())
+  parentId    String
+  parent      Parent   @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  offeringId  String
+  offering    Offering @relation(fields: [offeringId], references: [id], onDelete: Cascade)
+  bookingTime DateTime @default(now())
+  status      String   @default("CONFIRMED") // CONFIRMED, CANCELLED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([parentId, offeringId]) // Prevent duplicate bookings of same offering by the same parent
+  @@index([parentId])
+  @@index([offeringId])
+  @@map("bookings")
+}
