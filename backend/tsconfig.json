@@ -15,5 +15,5 @@
     "declarationMap": true,
     "types": ["node"]
   },
-  "include": ["src/**/*", "prisma"]
+  "include": ["src/**/*"]
 }
